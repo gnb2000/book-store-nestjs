@@ -2,22 +2,23 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Configuration } from 'src/config/config.keys';
 import { ConfigModule } from 'src/config/config.module';
 import { ConfigService } from 'src/config/config.service';
-import { ConnectionOptions } from 'typeorm';
+import { ConnectionOptions, DataSourceOptions } from 'typeorm';
 
 export const databaseProviders = [
     TypeOrmModule.forRootAsync({
         imports: [ConfigModule],
         inject: [ConfigService],
         async useFactory(config: ConfigService){
+            console.log(Configuration.DB_USER)
             return {
-                ssl: true,
                 type: 'mysql' as 'mysql',
-                host: config.get(Configuration.HOST),
-                username: config.get(Configuration.USERNAME),
-                password: config.get(Configuration.PASSWORD),
+                username: process.env.DB_USER,
+                password: process.env.PASSWORD,
                 entities: [__dirname + '/../**/*.entity{.ts,.js}'],
-                migrations: [__dirname + '/migartions/*{.ts, .js}']
-            } as ConnectionOptions
+                migrations: [__dirname + '/migartions/*{.ts, .js}'],
+                database: process.env.DATABASE,
+                port: 3306
+            } as DataSourceOptions
         }
     })
 ];
