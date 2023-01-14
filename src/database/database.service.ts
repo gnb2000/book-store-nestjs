@@ -9,7 +9,6 @@ export const databaseProviders = [
         imports: [ConfigModule],
         inject: [ConfigService],
         async useFactory(config: ConfigService){
-            console.log(Configuration.DB_USER)
             return {
                 type: 'mysql' as 'mysql',
                 username: process.env.DB_USER,
