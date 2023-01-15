@@ -9,7 +9,7 @@ import { UserDetails } from "../user/user.details.entity";
 import { User } from "../user/user.entity";
 import { SignupDto } from "./dto";
 
-@Injectable()
+/*@Injectable()
 export class AuthRepository extends Repository<User>{
 
     async signup(signupDto: SignupDto){
@@ -31,7 +31,7 @@ export class AuthRepository extends Repository<User>{
         const salt = await genSalt(10);
         user.password = await hash(password, salt);
 
-        await user.save();
+        await user.save;
     }
 
-}
+}*/

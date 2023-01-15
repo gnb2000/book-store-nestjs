@@ -1,18 +1,25 @@
 import { ConflictException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
-import { compare } from 'bcryptjs';
+import { compare, genSalt, hash } from 'bcryptjs';
+import mysqlDataSource from 'src/database/datasources.config';
+import { Repository } from 'typeorm';
+import { Role } from '../role/role.entity';
+import { RoleRepository } from '../role/role.repository';
 import { RoleType } from '../role/roletype.enum';
+import { UserDetails } from '../user/user.details.entity';
 import { User } from '../user/user.entity';
-import { AuthRepository } from './auth.repository';
+import { UserRepository } from '../user/user.repository';
 import { SigninDto, SignupDto } from './dto';
 import { IJwtPayload } from './jwt-payload.interface';
 
 @Injectable()
 export class AuthService {
     constructor(
-        @InjectRepository(AuthRepository)
-        private authRepository: AuthRepository,
+        @InjectRepository(User)
+        private authRepository: Repository<User>,
+        @InjectRepository(Role)
+        private roleRepository: Repository<Role>,
         private jwtService: JwtService
     ) {}
 
@@ -26,7 +33,7 @@ export class AuthService {
             throw new ConflictException("User or Email already exists");
         }
 
-        this.authRepository.signup(signupDto);
+        this.signupRepo(signupDto);
     }
 
     async signin(signinDto: SigninDto): Promise<{token: string}>{
@@ -53,7 +60,27 @@ export class AuthService {
         }
 
         const token = await this.jwtService.sign(payload);
-        
         return {token};
+    }
+
+    async signupRepo(signupDto: SignupDto){
+        const {username, password, email} = signupDto;
+        const user = new User();
+        user.username = username;
+        user.email = email;
+
+        const defaultRole: Role = await this.roleRepository.findOne({
+            where: {name: RoleType.GENERAL}
+        });
+
+        user.roles = [defaultRole];
+
+        const details = new UserDetails();
+        user.details = details;
+
+        const salt = await genSalt(10);
+        user.password = await hash(password, salt);
+
+        this.authRepository.save(user);
     }
 }

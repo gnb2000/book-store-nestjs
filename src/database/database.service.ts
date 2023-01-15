@@ -14,7 +14,7 @@ export const databaseProviders = [
                 username: process.env.DB_USER,
                 password: process.env.PASSWORD,
                 entities: [__dirname + '/../**/*.entity{.ts,.js}'],
-                migrations: [__dirname + '/migartions/*{.ts, .js}'],
+                migrations: [__dirname + '/migrations/*{.ts, .js}'],
                 database: process.env.DATABASE,
                 port: 3306
             } as DataSourceOptions
