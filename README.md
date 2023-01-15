@@ -1,3 +1,3 @@
-##BookStore API
+## BookStoreAPI
 
 BookStore API written in Nest.js
