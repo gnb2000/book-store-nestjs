@@ -2,11 +2,10 @@ import { Injectable, BadRequestException, NotFoundException } from '@nestjs/comm
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './user.entity';
 import { getConnection, Repository } from 'typeorm';
-
-import { UserRepository } from './user.repository';
-import { UserDetails } from './user.details.entity';
 import { Role } from '../role/role.entity';
 import { status } from '../../shared/entity-status.enum';
+import { ReadUserDto, UpdateUserDto } from './dto';
+import { plainToClass } from 'class-transformer';
 
 @Injectable()
 export class UserService {
@@ -18,7 +17,7 @@ export class UserService {
         private roleRepository: Repository<Role>
     ) {}
 
-    async get(id: number): Promise<User>{
+    async get(id: number): Promise<ReadUserDto>{
         if (!id){
             throw new BadRequestException("ID must be sent")
         }
@@ -31,27 +30,30 @@ export class UserService {
             throw new NotFoundException();
         }
 
-        return user;
+        return plainToClass(ReadUserDto, user);
     }
 
-    async getAll(): Promise<User[]>{
+    async getAll(): Promise<ReadUserDto[]>{
         const users: User[] = await this.userRepository.find({
             where: {status: status.ACTIVE}
         });
 
-        return users;
+        return users.map( (user: ReadUserDto) => plainToClass(ReadUserDto, user));
     }
 
-    async create(user: User): Promise<User>{
-        const details = new UserDetails();
-        user.details = details;
+    async update(id: number, user: Partial<UpdateUserDto>): Promise<ReadUserDto>{
+        const foundUser = await this.userRepository.findOne({
+            where: {id, status: status.ACTIVE}
+        });
 
-        const savedUser = await this.userRepository.save(user);
-        return savedUser;
-    }
+        if (!foundUser){
+            throw new NotFoundException("User does not exist")
+        }
 
-    async update(id: number, user: User): Promise<void>{
-        await this.userRepository.update(id, user);
+        foundUser.username = user.username;
+        const updatedUser = await this.userRepository.save(foundUser);
+
+        return plainToClass(ReadUserDto, updatedUser);
     }
 
     async delete(id: number): Promise<void>{
@@ -66,7 +68,7 @@ export class UserService {
         await this.userRepository.update(id, {status: status.INACTIVE});
     }
 
-    async setRoleToUser(userId: number, roleId: number){
+    async setRoleToUser(userId: number, roleId: number): Promise<boolean>{
         const userExists: User = await this.userRepository.findOne({
             where: {status: status.ACTIVE, id: userId}
         });    
