@@ -6,13 +6,16 @@ import { getConnection, Repository } from 'typeorm';
 import { UserRepository } from './user.repository';
 import { UserDetails } from './user.details.entity';
 import { Role } from '../role/role.entity';
+import { status } from '../../shared/entity-status.enum';
 
 @Injectable()
 export class UserService {
 
     constructor(
         @InjectRepository(User)
-        private userRepository: Repository<User>    
+        private userRepository: Repository<User>,
+        @InjectRepository(Role)
+        private roleRepository: Repository<Role>
     ) {}
 
     async get(id: number): Promise<User>{
@@ -21,7 +24,7 @@ export class UserService {
         }
 
         const user: User = await this.userRepository.findOne({
-            where: {status: 'ACTIVE', id: id}
+            where: {status: status.ACTIVE, id: id}
         });
 
         if (!user){
@@ -33,7 +36,7 @@ export class UserService {
 
     async getAll(): Promise<User[]>{
         const users: User[] = await this.userRepository.find({
-            where: {status: 'ACTIVE'}
+            where: {status: status.ACTIVE}
         });
 
         return users;
@@ -53,14 +56,37 @@ export class UserService {
 
     async delete(id: number): Promise<void>{
         const userExists: User = await this.userRepository.findOne({
-            where: {status: 'ACTIVE', id: id}
+            where: {status: status.ACTIVE, id: id}
         });    
 
         if (!userExists){
             throw new NotFoundException();
         }
 
-        await this.userRepository.update(id, {status: 'INACTIVE'});
+        await this.userRepository.update(id, {status: status.INACTIVE});
+    }
+
+    async setRoleToUser(userId: number, roleId: number){
+        const userExists: User = await this.userRepository.findOne({
+            where: {status: status.ACTIVE, id: userId}
+        });    
+
+        if (!userExists){
+            throw new NotFoundException();
+        }
+
+        const roleExists: Role = await this.roleRepository.findOne({
+            where: {status: status.ACTIVE, id: roleId}
+        });    
+
+        if (!roleExists){
+            throw new NotFoundException("Role does not exist");
+        }
+
+        userExists.roles.push(roleExists);
+        this.userRepository.save(userExists);
+
+        return true;
     }
 
     
