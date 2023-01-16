@@ -2,6 +2,7 @@ import { ConflictException, Injectable, NotFoundException, UnauthorizedException
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { compare, genSalt, hash } from 'bcryptjs';
+import { plainToClass } from 'class-transformer';
 import mysqlDataSource from 'src/database/datasources.config';
 import { Repository } from 'typeorm';
 import { Role } from '../role/role.entity';
@@ -10,7 +11,7 @@ import { RoleType } from '../role/roletype.enum';
 import { UserDetails } from '../user/user.details.entity';
 import { User } from '../user/user.entity';
 import { UserRepository } from '../user/user.repository';
-import { SigninDto, SignupDto } from './dto';
+import { LoggedInDto, SigninDto, SignupDto } from './dto';
 import { IJwtPayload } from './jwt-payload.interface';
 
 @Injectable()
@@ -36,7 +37,7 @@ export class AuthService {
         this.signupRepo(signupDto);
     }
 
-    async signin(signinDto: SigninDto): Promise<{token: string}>{
+    async signin(signinDto: SigninDto): Promise<LoggedInDto>{
         const {username, password} = signinDto;
         const user: User = await this.authRepository.findOne({
             where: {username}
@@ -59,8 +60,8 @@ export class AuthService {
             roles: user.roles.map(r => r.name as RoleType)
         }
 
-        const token = await this.jwtService.sign(payload);
-        return {token};
+        const token = this.jwtService.sign(payload);
+        return plainToClass(LoggedInDto, {token, user});
     }
 
     async signupRepo(signupDto: SignupDto){

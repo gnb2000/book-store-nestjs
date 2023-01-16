@@ -6,6 +6,7 @@ import { Role } from '../role/role.entity';
 import { status } from '../../shared/entity-status.enum';
 import { ReadUserDto, UpdateUserDto } from './dto';
 import { plainToClass } from 'class-transformer';
+import { error, log } from 'console';
 
 @Injectable()
 export class UserService {
